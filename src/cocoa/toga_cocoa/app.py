@@ -6,12 +6,12 @@ from urllib.parse import unquote, urlparse
 
 import toga
 from rubicon.objc import (SEL, NSMutableArray, NSMutableDictionary, NSObject,
-                          objc_method)
+                          objc_method, send_super)
 from rubicon.objc.eventloop import CocoaLifecycle, EventLoopPolicy
 from toga.handlers import wrapped_handler
 
-from .keys import cocoa_key
-from .libs import (NSURL, NSApplication, NSApplicationActivationPolicyRegular,
+from .keys import cocoa_key, toga_key, Key
+from .libs import (NSURL, NSApplication, NSApplicationActivationPolicyRegular, NSKeyDown,
                    NSBundle, NSCursor, NSDocumentController, NSMenu,
                    NSMenuItem, NSNumber, NSOpenPanel, NSScreen, NSString)
 from .window import Window
@@ -20,6 +20,27 @@ from .window import Window
 class MainWindow(Window):
     def on_close(self):
         self.interface.app.exit()
+
+
+class TogaApp(NSApplication):
+    @objc_method
+    def sendEvent_(self, event) -> None:
+        if event.type == NSKeyDown:
+            toga_event = toga_key(event)
+            if toga_event == {'key': Key.X, 'modifiers': {Key.MOD_1}}:
+                self.sendAction_to_from_(SEL('cut:'), None, self)
+            elif toga_event == {'key': Key.C, 'modifiers': {Key.MOD_1}}:
+                self.sendAction_to_from_(SEL('copy:'), None, self)
+            elif toga_event == {'key': Key.V, 'modifiers': {Key.MOD_1}}:
+                self.sendAction_to_from_(SEL('paste:'), None, self)
+            elif toga_event == {'key': Key.Z, 'modifiers': {Key.MOD_1}}:
+                self.sendAction_to_from_(SEL('undo:'), None, self)
+            elif toga_event == {'key': Key.Z, 'modifiers': {Key.SHIFT, Key.MOD_1}}:
+                self.sendAction_to_from_(SEL('redo:'), None, self)
+            elif toga_event == {'key': Key.A, 'modifiers': {Key.MOD_1}}:
+                self.sendAction_to_from_(SEL('selectAll:'), None, self)
+
+        send_super(__class__, self, 'sendEvent:', event)
 
 
 class AppDelegate(NSObject):
@@ -91,7 +112,7 @@ class App:
         self.loop = asyncio.get_event_loop()
 
     def create(self):
-        self.native = NSApplication.sharedApplication
+        self.native = TogaApp.sharedApplication
         self.native.setActivationPolicy(NSApplicationActivationPolicyRegular)
 
         self.native.setApplicationIconImage_(self.interface.icon._impl.native)
