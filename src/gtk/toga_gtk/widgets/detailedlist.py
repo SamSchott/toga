@@ -14,8 +14,7 @@ class DetailedList(Widget):
 
     def create(self):
         self.renderer = IconTextRenderer.from_style(self.interface)
-
-        self.store = SourceTreeModel(self.renderer.row_columns(), is_tree=False)
+        self.store = SourceTreeModel(is_tree=False)
 
         self.treeview = Gtk.TreeView(model=self.store)
         self.treeview.set_headers_visible(False)
