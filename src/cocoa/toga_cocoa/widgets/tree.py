@@ -72,8 +72,12 @@ class TogaTree(NSOutlineView):
         tcv = self.makeViewWithIdentifier(column.identifier, owner=self)
 
         if not tcv:  # there is no existing view to reuse so create a new one
-            tcv = TogaTableCellView.alloc().init()
+            tcv = TogaTableCellView.alloc().initWithLayout()
             tcv.identifier = column.identifier
+            tcv.checkbox.target = self
+            tcv.textField.target = self
+            tcv.checkbox.action = SEL('onToggled:')
+            tcv.textField.action = SEL('onTextEdited:')
 
         text = column.interface.get_data_for_node(node, "text")
         checked_state = column.interface.get_data_for_node(node, "checked_state")
@@ -83,11 +87,6 @@ class TogaTree(NSOutlineView):
         tcv.setText(text)
         tcv.setImage(native_icon)
         tcv.setCheckState(checked_state)
-
-        tcv.checkbox.target = self
-        tcv.textField.target = self
-        tcv.checkbox.action = SEL('onToggled:')
-        tcv.textField.action = SEL('onTextEdited:')
 
         return tcv
 
